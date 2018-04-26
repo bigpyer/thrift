@@ -29,6 +29,7 @@ import (
 
 const DEFAULT_MAX_LENGTH = 16384000
 
+// Framed Transport结构体
 type TFramedTransport struct {
 	transport TTransport
 	buf       bytes.Buffer
@@ -38,19 +39,23 @@ type TFramedTransport struct {
 	maxLength uint32
 }
 
+// Framed Transport工厂结构体
 type tFramedTransportFactory struct {
 	factory   TTransportFactory
 	maxLength uint32
 }
 
+// Framed Transport工厂构造函数
 func NewTFramedTransportFactory(factory TTransportFactory) TTransportFactory {
 	return &tFramedTransportFactory{factory: factory, maxLength: DEFAULT_MAX_LENGTH}
 }
 
+// Framed Transport工厂构造函数，指定最大长度
 func NewTFramedTransportFactoryMaxLength(factory TTransportFactory, maxLength uint32) TTransportFactory {
 	return &tFramedTransportFactory{factory: factory, maxLength: maxLength}
 }
 
+// 获取Framed Transport实例
 func (p *tFramedTransportFactory) GetTransport(base TTransport) (TTransport, error) {
 	tt, err := p.factory.GetTransport(base)
 	if err != nil {
@@ -59,6 +64,7 @@ func (p *tFramedTransportFactory) GetTransport(base TTransport) (TTransport, err
 	return NewTFramedTransportMaxLength(tt, p.maxLength), nil
 }
 
+// Framed Transport构造函数
 func NewTFramedTransport(transport TTransport) *TFramedTransport {
 	return &TFramedTransport{transport: transport, reader: bufio.NewReader(transport), maxLength: DEFAULT_MAX_LENGTH}
 }
@@ -79,6 +85,7 @@ func (p *TFramedTransport) Close() error {
 	return p.transport.Close()
 }
 
+// 重写Read方法
 func (p *TFramedTransport) Read(buf []byte) (l int, err error) {
 	if p.frameSize == 0 {
 		p.frameSize, err = p.readFrameHeader()
@@ -105,6 +112,7 @@ func (p *TFramedTransport) Read(buf []byte) (l int, err error) {
 	return got, NewTTransportExceptionFromError(err)
 }
 
+// 重写ReadByte方法
 func (p *TFramedTransport) ReadByte() (c byte, err error) {
 	if p.frameSize == 0 {
 		p.frameSize, err = p.readFrameHeader()
@@ -135,6 +143,7 @@ func (p *TFramedTransport) WriteString(s string) (n int, err error) {
 	return p.buf.WriteString(s)
 }
 
+// 重写Flush方法
 func (p *TFramedTransport) Flush() error {
 	size := p.buf.Len()
 	buf := p.buffer[:4]

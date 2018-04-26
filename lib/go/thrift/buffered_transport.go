@@ -23,6 +23,7 @@ import (
 	"bufio"
 )
 
+// BufferedTransportFactory结构体
 type TBufferedTransportFactory struct {
 	size int
 }
@@ -32,6 +33,7 @@ type TBufferedTransport struct {
 	tp TTransport
 }
 
+// 通过BufferedTransportFactory获取具体Transport实例
 func (p *TBufferedTransportFactory) GetTransport(trans TTransport) (TTransport, error) {
 	return NewTBufferedTransport(trans, p.size), nil
 }
@@ -40,6 +42,7 @@ func NewTBufferedTransportFactory(bufferSize int) *TBufferedTransportFactory {
 	return &TBufferedTransportFactory{size: bufferSize}
 }
 
+// BufferedTransport构造函数
 func NewTBufferedTransport(trans TTransport, bufferSize int) *TBufferedTransport {
 	return &TBufferedTransport{
 		ReadWriter: bufio.ReadWriter{
@@ -62,6 +65,7 @@ func (p *TBufferedTransport) Close() (err error) {
 	return p.tp.Close()
 }
 
+// 重写Read方法
 func (p *TBufferedTransport) Read(b []byte) (int, error) {
 	n, err := p.ReadWriter.Read(b)
 	if err != nil {
@@ -70,6 +74,7 @@ func (p *TBufferedTransport) Read(b []byte) (int, error) {
 	return n, err
 }
 
+// 重写Write方法
 func (p *TBufferedTransport) Write(b []byte) (int, error) {
 	n, err := p.ReadWriter.Write(b)
 	if err != nil {
@@ -78,6 +83,7 @@ func (p *TBufferedTransport) Write(b []byte) (int, error) {
 	return n, err
 }
 
+// 重写Flush方法
 func (p *TBufferedTransport) Flush() error {
 	if err := p.ReadWriter.Flush(); err != nil {
 		p.ReadWriter.Writer.Reset(p.tp)

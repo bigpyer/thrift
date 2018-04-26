@@ -29,6 +29,7 @@ type timeoutable interface {
 }
 
 // Thrift Transport exception
+// transport异常接口
 type TTransportException interface {
 	TException
 	TypeId() int

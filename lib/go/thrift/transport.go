@@ -35,6 +35,7 @@ type ReadSizeProvider interface {
 }
 
 // Encapsulates the I/O layer
+// 概括I/O层
 type TTransport interface {
 	io.ReadWriteCloser
 	Flusher
@@ -55,6 +56,8 @@ type stringWriter interface {
 // to construct protocol.
 // Notably, TSocket does not implement this interface, and it is always a mistake to use
 // TSocket directly in protocol.
+// 增强版transport，提供额外的功能。必须使用两者之一来构造protocol。
+// 注意，TSocket不直接实现这个接口，并且直接在protocol里使用TSocket是一个错误。
 type TRichTransport interface {
 	io.ReadWriter
 	io.ByteReader

@@ -25,6 +25,8 @@ import (
 )
 
 // StreamTransport is a Transport made of an io.Reader and/or an io.Writer
+// StreamTransport是由io.Reader和/或io.Writer实现的Transport
+// 支持只读、只写、读写?
 type StreamTransport struct {
 	io.Reader
 	io.Writer
@@ -32,6 +34,7 @@ type StreamTransport struct {
 	closed       bool
 }
 
+// stream transport工厂结构体
 type StreamTransportFactory struct {
 	Reader       io.Reader
 	Writer       io.Writer
@@ -98,6 +101,7 @@ func (p *StreamTransport) IsOpen() bool {
 }
 
 // implicitly opened on creation, can't be reopened once closed
+// 在创建的时候显式打开，关闭后不能重新打开
 func (p *StreamTransport) Open() error {
 	if !p.closed {
 		return NewTTransportException(ALREADY_OPEN, "StreamTransport already open.")
@@ -107,6 +111,7 @@ func (p *StreamTransport) Open() error {
 }
 
 // Closes both the input and output streams.
+// 关闭输入、输出流
 func (p *StreamTransport) Close() error {
 	if p.closed {
 		return NewTTransportException(NOT_OPEN, "StreamTransport already closed.")
@@ -138,6 +143,7 @@ func (p *StreamTransport) Close() error {
 }
 
 // Flushes the underlying output stream if not null.
+// 如果不为空，刷盘output stream
 func (p *StreamTransport) Flush() error {
 	if p.Writer == nil {
 		return NewTTransportException(NOT_OPEN, "Cannot flush null outputStream")

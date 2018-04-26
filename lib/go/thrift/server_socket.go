@@ -25,20 +25,24 @@ import (
 	"time"
 )
 
+// 服务端socket
 type TServerSocket struct {
 	listener      net.Listener
 	addr          net.Addr
 	clientTimeout time.Duration
 
 	// Protects the interrupted value to make it thread safe.
+	// 保护interrupted以保证线程安全
 	mu          sync.RWMutex
 	interrupted bool
 }
 
+// 根据字符串IP+Port地址，构造TServerSocket
 func NewTServerSocket(listenAddr string) (*TServerSocket, error) {
 	return NewTServerSocketTimeout(listenAddr, 0)
 }
 
+// 根据字符串IP+Port地址、超时时间，构造TServerSocket
 func NewTServerSocketTimeout(listenAddr string, clientTimeout time.Duration) (*TServerSocket, error) {
 	addr, err := net.ResolveTCPAddr("tcp", listenAddr)
 	if err != nil {
@@ -47,11 +51,12 @@ func NewTServerSocketTimeout(listenAddr string, clientTimeout time.Duration) (*T
 	return &TServerSocket{addr: addr, clientTimeout: clientTimeout}, nil
 }
 
-// Creates a TServerSocket from a net.Addr
+// 根据net.Addr、超时时间构造TServerSocket
 func NewTServerSocketFromAddrTimeout(addr net.Addr, clientTimeout time.Duration) *TServerSocket {
 	return &TServerSocket{addr: addr, clientTimeout: clientTimeout}
 }
 
+// 监听连接
 func (p *TServerSocket) Listen() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -66,6 +71,7 @@ func (p *TServerSocket) Listen() error {
 	return nil
 }
 
+// 接收连接，返回基于net.Conn的TTransport
 func (p *TServerSocket) Accept() (TTransport, error) {
 	p.mu.RLock()
 	interrupted := p.interrupted
@@ -88,11 +94,13 @@ func (p *TServerSocket) Accept() (TTransport, error) {
 }
 
 // Checks whether the socket is listening.
+// 检查socket是否正在监听
 func (p *TServerSocket) IsListening() bool {
 	return p.listener != nil
 }
 
 // Connects the socket, creating a new socket object if necessary.
+// 监听socket，如果需要，创建一个新的socket
 func (p *TServerSocket) Open() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -107,6 +115,7 @@ func (p *TServerSocket) Open() error {
 	return nil
 }
 
+// 返回当前socket的net.Addr
 func (p *TServerSocket) Addr() net.Addr {
 	if p.listener != nil {
 		return p.listener.Addr()
@@ -114,6 +123,7 @@ func (p *TServerSocket) Addr() net.Addr {
 	return p.addr
 }
 
+// 关闭套接字
 func (p *TServerSocket) Close() error {
 	defer func() {
 		p.listener = nil
@@ -124,6 +134,7 @@ func (p *TServerSocket) Close() error {
 	return nil
 }
 
+// 中断当前套接字
 func (p *TServerSocket) Interrupt() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()

@@ -20,6 +20,7 @@
 package thrift
 
 // Server transport. Object which provides client transports.
+// 网络层接口，通过Accept产生提供各种客户端transports
 type TServerTransport interface {
 	Listen() error
 	Accept() (TTransport, error)
@@ -30,5 +31,6 @@ type TServerTransport interface {
 	// blocked on. This method, if implemented, MUST be thread safe, as it may
 	// be called from a different thread context than the other TServerTransport
 	// methods.
+	// 附加方法实现。用来通知server transport，需要停止accept()或listen()。如果实现了这个方法，必须保证是线程安全的，不同于其他transport方法，这个方法有可能从一个不同的线程上下文调用
 	Interrupt() error
 }

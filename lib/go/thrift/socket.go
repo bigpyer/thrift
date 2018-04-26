@@ -31,7 +31,7 @@ type TSocket struct {
 }
 
 // NewTSocket creates a net.Conn-backed TTransport, given a host and port
-//
+// 根据跟定的IP、端口，创建一个基于net.Conn的TTransport
 // Example:
 // 	trans, err := thrift.NewTSocket("localhost:9090")
 func NewTSocket(hostPort string) (*TSocket, error) {
@@ -40,6 +40,7 @@ func NewTSocket(hostPort string) (*TSocket, error) {
 
 // NewTSocketTimeout creates a net.Conn-backed TTransport, given a host and port
 // it also accepts a timeout as a time.Duration
+// 根据给定的IP、端口，创建一个基于net.Conn的TTransport，同时接收一个time.Duration的超时时间
 func NewTSocketTimeout(hostPort string, timeout time.Duration) (*TSocket, error) {
 	//conn, err := net.DialTimeout(network, address, timeout)
 	addr, err := net.ResolveTCPAddr("tcp", hostPort)
@@ -50,21 +51,25 @@ func NewTSocketTimeout(hostPort string, timeout time.Duration) (*TSocket, error)
 }
 
 // Creates a TSocket from a net.Addr
+// 根据给定的net.Addr，创建一个TSocket
 func NewTSocketFromAddrTimeout(addr net.Addr, timeout time.Duration) *TSocket {
 	return &TSocket{addr: addr, timeout: timeout}
 }
 
 // Creates a TSocket from an existing net.Conn
+// 根据给定的net.Conn、超时时间，创建一个TSocket
 func NewTSocketFromConnTimeout(conn net.Conn, timeout time.Duration) *TSocket {
 	return &TSocket{conn: conn, addr: conn.RemoteAddr(), timeout: timeout}
 }
 
 // Sets the socket timeout
+// 设置socket超时时间
 func (p *TSocket) SetTimeout(timeout time.Duration) error {
 	p.timeout = timeout
 	return nil
 }
 
+// 设置读、写超时时间
 func (p *TSocket) pushDeadline(read, write bool) {
 	var t time.Time
 	if p.timeout > 0 {
@@ -80,6 +85,7 @@ func (p *TSocket) pushDeadline(read, write bool) {
 }
 
 // Connects the socket, creating a new socket object if necessary.
+// 连接到指定套接字，如果需要，可以创建一个新的套接字对象
 func (p *TSocket) Open() error {
 	if p.IsOpen() {
 		return NewTTransportException(ALREADY_OPEN, "Socket already connected.")
@@ -101,11 +107,13 @@ func (p *TSocket) Open() error {
 }
 
 // Retrieve the underlying net.Conn
+// 返回当下的net.Conn
 func (p *TSocket) Conn() net.Conn {
 	return p.conn
 }
 
 // Returns true if the connection is open
+// 如果conn不为空，返回true
 func (p *TSocket) IsOpen() bool {
 	if p.conn == nil {
 		return false
@@ -114,6 +122,7 @@ func (p *TSocket) IsOpen() bool {
 }
 
 // Closes the socket.
+// 关闭套接字
 func (p *TSocket) Close() error {
 	// Close the socket
 	if p.conn != nil {
@@ -126,11 +135,13 @@ func (p *TSocket) Close() error {
 	return nil
 }
 
-//Returns the remote address of the socket.
+// Returns the remote address of the socket.
+// 返回socket的远程地址
 func (p *TSocket) Addr() net.Addr {
 	return p.addr
 }
 
+// 读取数据到buf
 func (p *TSocket) Read(buf []byte) (int, error) {
 	if !p.IsOpen() {
 		return 0, NewTTransportException(NOT_OPEN, "Connection not open")
@@ -140,6 +151,7 @@ func (p *TSocket) Read(buf []byte) (int, error) {
 	return n, NewTTransportExceptionFromError(err)
 }
 
+// 写入buf的数据到p.conn
 func (p *TSocket) Write(buf []byte) (int, error) {
 	if !p.IsOpen() {
 		return 0, NewTTransportException(NOT_OPEN, "Connection not open")
@@ -148,10 +160,12 @@ func (p *TSocket) Write(buf []byte) (int, error) {
 	return p.conn.Write(buf)
 }
 
+// 同步写入，不需要Flush操作
 func (p *TSocket) Flush() error {
 	return nil
 }
 
+// TODO 直接关闭?
 func (p *TSocket) Interrupt() error {
 	if !p.IsOpen() {
 		return nil
@@ -159,6 +173,7 @@ func (p *TSocket) Interrupt() error {
 	return p.conn.Close()
 }
 
+// 只有在framed transport会用得到
 func (p *TSocket) RemainingBytes() (num_bytes uint64) {
 	const maxSize = ^uint64(0)
 	return maxSize // the thruth is, we just don't know unless framed is used

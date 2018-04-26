@@ -24,11 +24,13 @@ import (
 )
 
 // Memory buffer-based implementation of the TTransport interface.
+// 内存buffer-based的transport接口实现
 type TMemoryBuffer struct {
 	*bytes.Buffer
 	size int
 }
 
+// memory buffer transport工厂结构体
 type TMemoryBufferTransportFactory struct {
 	size int
 }
@@ -70,6 +72,7 @@ func (p *TMemoryBuffer) Close() error {
 }
 
 // Flushing a memory buffer is a no-op
+// memory buffer的Flush不需要任何操作
 func (p *TMemoryBuffer) Flush() error {
 	return nil
 }
