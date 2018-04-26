@@ -30,20 +30,24 @@ import (
  * This is not a typical TSimpleServer as it is not blocked after accept a socket.
  * It is more like a TThreadedServer that can handle different connections in different goroutines.
  * This will work if golang user implements a conn-pool like thing in client side.
+ * 这不是一个典型的TSimpleServer，因为它是无阻塞接收每一个连接
+ * 它更像一个TThreadedServer，可以在不同的goroutines里接收不同的连接
+ * 如果在客户端实现一个连接池效果更佳
  */
 type TSimpleServer struct {
 	closed int32
 	wg     sync.WaitGroup
 	mu     sync.Mutex
 
-	processorFactory       TProcessorFactory
-	serverTransport        TServerTransport
-	inputTransportFactory  TTransportFactory
-	outputTransportFactory TTransportFactory
-	inputProtocolFactory   TProtocolFactory
-	outputProtocolFactory  TProtocolFactory
+	processorFactory       TProcessorFactory // 处理器工厂
+	serverTransport        TServerTransport  // 基础transport工厂
+	inputTransportFactory  TTransportFactory // 输入transport工厂
+	outputTransportFactory TTransportFactory // 输出transport工厂
+	inputProtocolFactory   TProtocolFactory  // 输入协议工厂
+	outputProtocolFactory  TProtocolFactory  // 输出协议工厂
 }
 
+// 根据Processor、基础Transport创建TSimpleServer
 func NewTSimpleServer2(processor TProcessor, serverTransport TServerTransport) *TSimpleServer {
 	return NewTSimpleServerFactory2(NewTProcessorFactory(processor), serverTransport)
 }
@@ -66,6 +70,7 @@ func NewTSimpleServer6(processor TProcessor, serverTransport TServerTransport, i
 	)
 }
 
+// 根据Processor工厂、基础Transport创建TSimpleServer的双参数工厂构造函数,Protocol工厂函数为NewTBinaryProtocolFactoryDefault()
 func NewTSimpleServerFactory2(processorFactory TProcessorFactory, serverTransport TServerTransport) *TSimpleServer {
 	return NewTSimpleServerFactory6(processorFactory,
 		serverTransport,
@@ -86,6 +91,7 @@ func NewTSimpleServerFactory4(processorFactory TProcessorFactory, serverTranspor
 	)
 }
 
+// 根据Processor工厂、基础Transport、TTransportFactory、TTransportFactor、TProtocolFactory、TProtocolFactory创建TSimpleServer的六参数工厂构造函数，一般为内部使用
 func NewTSimpleServerFactory6(processorFactory TProcessorFactory, serverTransport TServerTransport, inputTransportFactory TTransportFactory, outputTransportFactory TTransportFactory, inputProtocolFactory TProtocolFactory, outputProtocolFactory TProtocolFactory) *TSimpleServer {
 	return &TSimpleServer{
 		processorFactory:       processorFactory,
@@ -125,6 +131,7 @@ func (p *TSimpleServer) Listen() error {
 	return p.serverTransport.Listen()
 }
 
+// 循环接收请求
 func (p *TSimpleServer) AcceptLoop() error {
 	for {
 		client, err := p.serverTransport.Accept()
@@ -148,6 +155,7 @@ func (p *TSimpleServer) AcceptLoop() error {
 	}
 }
 
+// 对外服务
 func (p *TSimpleServer) Serve() error {
 	err := p.Listen()
 	if err != nil {
@@ -157,6 +165,7 @@ func (p *TSimpleServer) Serve() error {
 	return nil
 }
 
+// 停止服务
 func (p *TSimpleServer) Stop() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -169,6 +178,7 @@ func (p *TSimpleServer) Stop() error {
 	return nil
 }
 
+// 处理请求
 func (p *TSimpleServer) processRequests(client TTransport) error {
 	processor := p.processorFactory.GetProcessor(client)
 	inputTransport, err := p.inputTransportFactory.GetTransport(client)
@@ -198,6 +208,7 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 			return nil
 		}
 
+		// processor由thrift gen生成、定义、并通过handler实现具体的业务逻辑
 		ok, err := processor.Process(defaultCtx, inputProtocol, outputProtocol)
 		if err, ok := err.(TTransportException); ok && err.TypeId() == END_OF_FILE {
 			return nil
