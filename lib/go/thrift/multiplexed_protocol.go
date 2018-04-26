@@ -46,8 +46,12 @@ if err != nil {
 
 fmt.Println(service.Add(2,2))
 fmt.Println(service2.GetTemperature())
+
+TMultiplexedProtocol是一个独立于当前protocol的装饰器，它允许客户端通过传递服务名、函数名与multiplexing的thrift server交互
+注意: 这个不是服务端使用的。在服务端，需要使用TMultiplexedProcessor来处理来自于multiplexing client的请求。
 */
 
+// 客户端多路协议结构体，需要依赖其他协议
 type TMultiplexedProtocol struct {
 	TProtocol
 	serviceName string
@@ -55,6 +59,7 @@ type TMultiplexedProtocol struct {
 
 const MULTIPLEXED_SEPARATOR = ":"
 
+// 多路协议构造函数
 func NewTMultiplexedProtocol(protocol TProtocol, serviceName string) *TMultiplexedProtocol {
 	return &TMultiplexedProtocol{
 		TProtocol:   protocol,
@@ -62,6 +67,7 @@ func NewTMultiplexedProtocol(protocol TProtocol, serviceName string) *TMultiplex
 	}
 }
 
+// 重写WriteMessageBegin
 func (t *TMultiplexedProtocol) WriteMessageBegin(name string, typeId TMessageType, seqid int32) error {
 	if typeId == CALL || typeId == ONEWAY {
 		return t.TProtocol.WriteMessageBegin(t.serviceName+MULTIPLEXED_SEPARATOR+name, typeId, seqid)
@@ -98,13 +104,18 @@ if err != nil {
 }
 server := thrift.NewTSimpleServer2(processor, serverTransport)
 server.Serve();
+
+TMultiplexedProcessor允许单个TServer提供多路服务
+为了实现上述功能，你需要构造processor实例然后注册多个附加processors
 */
 
+// 服务端多路协议处理器结构体
 type TMultiplexedProcessor struct {
 	serviceProcessorMap map[string]TProcessor
 	DefaultProcessor    TProcessor
 }
 
+// 服务端多路协议处理器构造函数
 func NewTMultiplexedProcessor() *TMultiplexedProcessor {
 	return &TMultiplexedProcessor{
 		serviceProcessorMap: make(map[string]TProcessor),
@@ -115,6 +126,7 @@ func (t *TMultiplexedProcessor) RegisterDefault(processor TProcessor) {
 	t.DefaultProcessor = processor
 }
 
+// 注册其他处理器
 func (t *TMultiplexedProcessor) RegisterProcessor(name string, processor TProcessor) {
 	if t.serviceProcessorMap == nil {
 		t.serviceProcessorMap = make(map[string]TProcessor)

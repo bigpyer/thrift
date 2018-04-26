@@ -15,6 +15,17 @@
  * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ * 报文格式:
+ *		binary encoding
+ *          byte length(32 bit)|bytes|
+ *      message encoding
+ *          version(1+15bit)|message type(00000+3bit)|name length(signed 32 bit integer)|name(UTF-8 encoded string)|seq id(32bit)|
+ *      struct encoding
+ *          field type(8 bit)|field id(16 bit)|field value|stop|
+ *      list and set
+ *          element type(int8)|size(int32)|elements
+ *      map
+ *          key-element-type(int8)|value-element-type(int8)|size(int32)|key-value-pairs|
  */
 
 package thrift
@@ -28,25 +39,29 @@ import (
 	"math"
 )
 
+// binary protocol结构体
 type TBinaryProtocol struct {
-	trans         TRichTransport
-	origTransport TTransport
-	reader        io.Reader
-	writer        io.Writer
+	trans         TRichTransport // rich transport
+	origTransport TTransport     // 最开始传入的transport
+	reader        io.Reader      // transport
+	writer        io.Writer      // transport
 	strictRead    bool
 	strictWrite   bool
 	buffer        [64]byte
 }
 
+// binary protocol工厂结构体
 type TBinaryProtocolFactory struct {
 	strictRead  bool
 	strictWrite bool
 }
 
+// 根据transport创建binary protocol
 func NewTBinaryProtocolTransport(t TTransport) *TBinaryProtocol {
 	return NewTBinaryProtocol(t, false, true)
 }
 
+// 根据transport、strictRead、strictWrite创建binary protocol
 func NewTBinaryProtocol(t TTransport, strictRead, strictWrite bool) *TBinaryProtocol {
 	p := &TBinaryProtocol{origTransport: t, strictRead: strictRead, strictWrite: strictWrite}
 	if et, ok := t.(TRichTransport); ok {
@@ -59,6 +74,7 @@ func NewTBinaryProtocol(t TTransport, strictRead, strictWrite bool) *TBinaryProt
 	return p
 }
 
+// binary protocol工厂类默认构造函数
 func NewTBinaryProtocolFactoryDefault() *TBinaryProtocolFactory {
 	return NewTBinaryProtocolFactory(false, true)
 }
@@ -73,6 +89,7 @@ func (p *TBinaryProtocolFactory) GetProtocol(t TTransport) TProtocol {
 
 /**
  * Writing Methods
+ * 各个Writing方法
  */
 
 func (p *TBinaryProtocol) WriteMessageBegin(name string, typeId TMessageType, seqId int32) error {
@@ -233,6 +250,7 @@ func (p *TBinaryProtocol) WriteBinary(value []byte) error {
 
 /**
  * Reading methods
+ * 各种Reading方法
  */
 
 func (p *TBinaryProtocol) ReadMessageBegin() (name string, typeId TMessageType, seqId int32, err error) {
