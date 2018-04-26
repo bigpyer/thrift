@@ -21,6 +21,7 @@ package thrift
 
 // The default processor factory just returns a singleton
 // instance.
+// 默认的processor工厂只返回单例
 type TProcessorFactory interface {
 	GetProcessor(trans TTransport) TProcessor
 }
